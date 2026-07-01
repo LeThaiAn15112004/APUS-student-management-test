@@ -4,6 +4,50 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 
+interface UserProfileInput {
+  displayName: string
+  bio?: string
+  themeColor: 'blue' | 'green' | 'purple'
+}
+
+const allowedThemeColors = new Set(['blue', 'green', 'purple'])
+
+function validateUserProfile(payload: unknown): UserProfileInput {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    throw new Error('Profile payload must be an object')
+  }
+
+  const profile = payload as Record<string, unknown>
+
+  if (typeof profile.displayName !== 'string') {
+    throw new Error('displayName must be a string')
+  }
+
+  const displayName = profile.displayName.trim()
+  if (displayName.length < 2 || displayName.length > 32) {
+    throw new Error('displayName must be 2-32 characters')
+  }
+
+  if (profile.bio !== undefined && typeof profile.bio !== 'string') {
+    throw new Error('bio must be a string')
+  }
+
+  const bio = typeof profile.bio === 'string' ? profile.bio.trim() : undefined
+  if (bio && bio.length > 120) {
+    throw new Error('bio must be 120 characters or less')
+  }
+
+  if (typeof profile.themeColor !== 'string' || !allowedThemeColors.has(profile.themeColor)) {
+    throw new Error('themeColor must be blue, green, or purple')
+  }
+
+  return {
+    displayName,
+    ...(bio ? { bio } : {}),
+    themeColor: profile.themeColor as UserProfileInput['themeColor']
+  }
+}
+
 function setupContentSecurityPolicy(): void {
   const scriptSrc = is.dev
     ? "script-src 'self' 'unsafe-inline' http://localhost:* https://trusted.cdn.com"
@@ -111,6 +155,12 @@ app.whenReady().then(() => {
 
   ipcMain.on('debug:run-command', (_event, payload) => {
     console.warn('[DANGER DEMO] Renderer da yeu cau chay debug command:', payload)
+  })
+
+  ipcMain.handle('user:update-profile', (_event, payload) => {
+    const savedProfile = validateUserProfile(payload)
+    console.log('[SAFE IPC DEMO] Profile payload hop le, Main chap nhan:', savedProfile)
+    return { ok: true, savedProfile }
   })
 
   createWindow()

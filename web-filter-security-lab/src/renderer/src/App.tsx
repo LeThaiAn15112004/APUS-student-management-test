@@ -137,6 +137,41 @@ function App(): React.JSX.Element {
     }
   }
 
+  const handleSafeProfileDemo = async (): Promise<void> => {
+    try {
+      const result = await window.userAPI.updateProfile({
+        displayName: 'Demo User',
+        bio: 'Renderer chi gui y dinh cap nhat profile.',
+        themeColor: 'green'
+      })
+
+      setOutputResult(JSON.stringify(result, null, 2))
+      setIsError(false)
+    } catch (err: unknown) {
+      setOutputResult(getErrorMessage(err))
+      setIsError(true)
+    }
+  }
+
+  const handleRejectedProfileDemo = async (): Promise<void> => {
+    try {
+      const unsafePayload = {
+        displayName: 'A',
+        bio: 'x'.repeat(140),
+        themeColor: 'admin-red',
+        role: 'admin',
+        writePath: 'C:/Windows/System32/config'
+      } as never
+
+      await window.userAPI.updateProfile(unsafePayload)
+      setOutputResult('Unexpected: Main accepted invalid profile payload.')
+      setIsError(false)
+    } catch (err: unknown) {
+      setOutputResult(`Main rejected invalid Renderer payload: ${getErrorMessage(err)}`)
+      setIsError(true)
+    }
+  }
+
   return (
     <div
       style={{
@@ -175,6 +210,12 @@ function App(): React.JSX.Element {
         </div>
         <div className="action">
           <a onClick={handleSafeBridgeDemo}>Safe bridge demo</a>
+        </div>
+        <div className="action">
+          <a onClick={handleSafeProfileDemo}>Safe profile IPC</a>
+        </div>
+        <div className="action">
+          <a onClick={handleRejectedProfileDemo}>Rejected profile IPC</a>
         </div>
       </div>
 

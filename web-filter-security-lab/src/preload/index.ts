@@ -21,11 +21,16 @@ const safeAPI = {
   // Kiểm soát chặt chẽ đầu vào.
 }
 
+const userAPI = {
+  updateProfile: (profile) => ipcRenderer.invoke('user:update-profile', profile)
+}
+
 if (process.contextIsolated) {
   contextBridge.exposeInMainWorld('electron', electronAPI)
   contextBridge.exposeInMainWorld('api', api)
   contextBridge.exposeInMainWorld('badAPI', badAPI)
   contextBridge.exposeInMainWorld('safeAPI', safeAPI)
+  contextBridge.exposeInMainWorld('userAPI', userAPI)
 
   contextBridge.exposeInMainWorld('isolationDemo', {
     status: 'Renderer nhan API thong qua contextBridge',
